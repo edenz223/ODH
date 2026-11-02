@@ -556,3 +556,16 @@ test('the dictionary fetch deadline stays below the caller reply budget', () => 
     assert.ok(ODH_DICTIONARY_FETCH_TIMEOUT_MS < ODH_DEFAULT_REQUEST_TIMEOUT_MS,
         `the dictionary deadline (${ODH_DICTIONARY_FETCH_TIMEOUT_MS}) must stay below the reply budget (${ODH_DEFAULT_REQUEST_TIMEOUT_MS})`);
 });
+
+
+test('options and popup pages keep their source when opened in a browser tab', () => {
+    const fixture = workerFixture();
+    for (const [path, source] of [['bg/options.html', 'options'], ['bg/popup.html', 'popup']]) {
+        let called = false;
+        fixture.worker[source + '_optionsChanged'] = params => { called = true; params.callback({ __odhReply: true, ok: true, value: null }); };
+        fixture.worker.onMessage({ action: 'optionsChanged', params: {}, target: 'serviceworker' }, {
+            id: RUNTIME_ID, url: fixture.chrome.runtime.getURL(path), tab: { id: 1 }
+        }, () => {});
+        assert.equal(called, true);
+    }
+});

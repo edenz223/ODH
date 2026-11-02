@@ -179,6 +179,7 @@ const libExports = {
     'lib/message.js': ['ODH_DEFAULT_REQUEST_TIMEOUT_MS', 'ODH_DICTIONARY_FETCH_TIMEOUT_MS', 'odhWithTimeout', 'odhSendMessage', 'odhPostMessage', 'TO_WORKER', 'TO_OFFSCREEN', 'TO_FRONTEND'],
     'lib/agent.js': ['Agent'],
     'lib/purify-3.4.11.min.js': ['DOMPurify'],
+    'lib/marked-18.1.2.umd.js': ['marked'],
     'lib/sanitize.js': ['sanitizeNote', 'odhSanitizeHtml', 'odhSanitizeAudioUrl']
 };
 
@@ -271,7 +272,7 @@ test('every content script is satisfied by the lib scripts loaded before it', ()
 });
 
 test('the worker imports the lib scripts its own scripts use, in order', () => {
-    const loaded = ['lib/envelope.js', 'lib/message.js'];
+    const loaded = ['lib/envelope.js', 'lib/message.js', 'lib/marked-18.1.2.umd.js'];
     assertLibOrder(loaded, 'importScripts');
     assertSatisfied('bg/js/serviceworker.js', loaded, 'importScripts');
 });

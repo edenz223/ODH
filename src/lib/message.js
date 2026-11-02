@@ -57,11 +57,11 @@ function odhWithTimeout(promise, timeoutMs, { setTimer = setTimeout, clearTimer 
 // knows and currently spells out by hand: request.target = '<role>'.
 // A transport that fails before a reply exists is classified as 'network'; a reply that carries
 // a classification keeps it, so a timeout is never flattened into a channel error.
-async function odhSendMessage(target, request) {
+async function odhSendMessage(target, request, timeoutMs = ODH_DEFAULT_REQUEST_TIMEOUT_MS) {
     request.target = target;
     let result;
     try {
-        result = await odhWithTimeout(chrome.runtime.sendMessage(request), ODH_DEFAULT_REQUEST_TIMEOUT_MS);
+        result = await odhWithTimeout(chrome.runtime.sendMessage(request), timeoutMs);
     } catch (error) {
         throw (error && error.kind) ? error : odhError('network', odhErrorMessage(error));
     }

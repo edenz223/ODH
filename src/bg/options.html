@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="css/checkbox.css">
     <link rel="stylesheet" href="css/scriptlist.css">
     <link rel="stylesheet" href="css/options.css">
+    <link rel="stylesheet" href="css/ai_options.css">
     <title data-i18n="optTitle">Online Dictionary Helper</title>
 </head>
 
@@ -17,6 +18,7 @@
             <a href="#" data-contentid="tab-1" class="tabmenu active" data-i18n="tabExtensionTitle">General</a>
             <a href="#" data-contentid="tab-2" class="tabmenu" data-i18n="tabServicesTitle">Anki</a>
             <a href="#" data-contentid="tab-3" class="tabmenu" data-i18n="tabScriptsTitle">Scripts</a>
+            <a href="#" data-contentid="tab-4" class="tabmenu" data-i18n="tabAiTitle">AI Options</a>
         </div>
 
         <form>
@@ -191,6 +193,11 @@
                     </div>
                 </div>
             </div>
+            <div id="tab-4" class="tabcontent" style="display:none">
+                <div class="ai-toolbar"><span data-i18n="grpAiKeys">API configurations</span><button type="button" id="ai-add" aria-label="Add API configuration">+</button></div>
+                <p id="ai-empty" class="ai-help" data-i18n="aiEmpty">Click + to add an API configuration.</p>
+                <div id="ai-configurations"></div>
+            </div>
         </form>
         <hr>
         <div class="grouppannel">
@@ -210,6 +217,41 @@
         </div>
     </div>
 
+    <dialog id="ai-dialog" aria-labelledby="ai-dialog-title">
+        <form id="ai-form">
+            <h2 id="ai-dialog-title" data-i18n="aiAdd">Add API configuration</h2>
+            <label for="ai-provider" data-i18n="aiProvider">Provider</label>
+            <select id="ai-provider" required>
+                <option value="" data-i18n="aiChooseProvider">Choose a provider</option>
+                <option value="openai">OpenAI</option><option value="gemini">Gemini</option><option value="deepseek">DeepSeek</option>
+            </select>
+            <div id="ai-details" hidden>
+                <label for="ai-key">API Key:</label>
+                <input id="ai-key" type="password" autocomplete="off" spellcheck="false" required>
+                <label for="ai-model" data-i18n="aiModel">Model:</label>
+                <div class="ai-model-row">
+                    <select id="ai-model" aria-describedby="ai-model-status"></select>
+                    <input id="ai-custom-model" type="text" hidden autocomplete="off" spellcheck="false" aria-label="Model name">
+                    <label class="ai-check"><input id="ai-custom" type="checkbox"><span data-i18n="aiCustomModel">Enter model name</span></label>
+                </div>
+                <div class="ai-model-loading"><p id="ai-model-status" class="ai-help" role="status" aria-live="polite"></p><button id="ai-model-refresh" type="button" data-i18n="aiModelsLoad">Load models</button></div>
+                <label for="ai-endpoint" data-i18n="aiEndpoint">Model API endpoint:</label>
+                <input id="ai-endpoint" type="url" required spellcheck="false">
+                <p class="ai-help" data-i18n="aiEndpointHelp">Enter the full API endpoint. For Gemini, use {model} in the URL.</p>
+                <div class="ai-test-row"><div><span data-i18n="aiTestTitle">Test availability</span><p class="ai-help" data-i18n="aiTestHelp">Send a short request to check this key and model.</p></div><button id="ai-test" type="button" data-i18n="aiTest">Test</button></div>
+                <p id="ai-status" role="status" aria-live="polite"></p>
+                <details id="ai-advanced" class="ai-advanced">
+                    <summary data-i18n="aiAdvanced">Advanced settings</summary>
+                    <p class="ai-help" id="ai-prompt-help" data-i18n="aiPromptHelp">{highlight}: selected text. {context}: surrounding context. Placeholders are replaced when generating an explanation.</p>
+                    <label for="ai-system-prompt" data-i18n="aiSystemPrompt">System prompt (system_prompt)</label>
+                    <textarea id="ai-system-prompt" rows="4" spellcheck="false" aria-describedby="ai-prompt-help"></textarea>
+                    <label for="ai-user-prompt" data-i18n="aiUserPrompt">User prompt (user_prompt)</label>
+                    <textarea id="ai-user-prompt" rows="7" spellcheck="false" aria-describedby="ai-prompt-help"></textarea>
+                </details>
+            </div>
+            <div class="ai-actions"><button id="ai-cancel" type="button" data-i18n="aiCancel">Cancel</button><button id="ai-save" type="submit" data-i18n="aiSave" disabled>Save</button></div>
+        </form>
+    </dialog>
     <!--script src="js/polyfill.js"></script-->
     <script src="../lib/jquery-3.0.0.min.js"></script>
     <script src="js/utils.js"></script>
@@ -218,6 +260,8 @@
     <script src="../lib/message.js"></script>
     <script src="js/options_api.js"></script>
     <script src="js/options.js"></script>
+    <script src="js/ai_client.js"></script>
+    <script src="js/ai_options.js"></script>
 </body>
 
 </html>

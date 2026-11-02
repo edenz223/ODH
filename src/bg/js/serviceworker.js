@@ -1,4 +1,4 @@
-/* global Ankiconnect, Deinflector, Builtin, optionsLoad, optionsSave, ODH_DICTIONARY_FETCH_TIMEOUT_MS, odhOk, odhFail, odhSendMessage, odhLog, TO_WORKER, TO_OFFSCREEN, TO_FRONTEND */
+/* global aiLookup, aiEscapeHtml, Ankiconnect, Deinflector, Builtin, optionsLoad, optionsSave, ODH_DICTIONARY_FETCH_TIMEOUT_MS, odhOk, odhFail, odhSendMessage, odhLog, TO_WORKER, TO_OFFSCREEN, TO_FRONTEND */
 class ODHServiceworker {
     constructor() {
 
@@ -69,9 +69,33 @@ class ODHServiceworker {
         this.tabInvoke(tabId, {
             action:'setFrontendOptions',
             params: {
-                options: this.options
+                options: this.frontendOptions(this.options)
             }
         });
+    }
+
+    aiDictionaryEntries(options) {
+        const providers = { openai: 'OpenAI', gemini: 'Gemini', deepseek: 'DeepSeek' };
+        return (options.aiConfigurations || []).filter(config => config.id && providers[config.provider] && config.apiKey && config.model).map((config, index) => ({
+            objectname: 'ai:' + config.id,
+            displayname: `AI · ${providers[config.provider]} · ${config.model} (${index + 1})`
+        }));
+    }
+
+    refreshAiDictionaries(options) {
+        if (!options.aiConfigurations && !options.dictNamelist) return;
+        options.dictNamelist = [...(options.dictNamelist || []).filter(item => !item.objectname.startsWith('ai:')), ...this.aiDictionaryEntries(options)];
+        if (options.dictSelected?.startsWith('ai:') && !options.dictNamelist.some(item => item.objectname === options.dictSelected)) {
+            options.dictSelected = options.dictNamelist[0]?.objectname || '';
+        }
+    }
+
+    frontendOptions(options) {
+        const result = { ...options };
+        for (const field of ['aiConfigurations', 'openaiApiKey', 'geminiApiKey', 'deepseekApiKey']) {
+            delete result[field];
+        }
+        return result;
     }
 
     setFrontendOptions(options) {
@@ -87,7 +111,7 @@ class ODHServiceworker {
         this.tabInvokeAll({
             action:'setFrontendOptions',
             params: {
-                options
+                options: this.frontendOptions(options)
             }
         });
     }
@@ -297,21 +321,24 @@ class ODHServiceworker {
 
     // Frontend API
     async frontend_getTranslation(params) {
-        let { expression, callback } = params;
+        let { expression, context = '', callback } = params;
 
         // Fix https://github.com/ninja33/ODH/issues/97
-        if (expression.endsWith(".")) {
+        if (!this.options?.dictSelected?.startsWith('ai:') && expression.endsWith(".")) {
             expression = expression.slice(0, -1);
         }
 
         try {
-            let result = await this.findTerm(expression);
+            let result = await this.findTerm(expression, context);
             callback(odhOk(result));
         } catch (error) {
             // WHY: the action is logged, never the expression. A looked-up term is page content,
             // and a diagnostic line must not carry it.
             console.error('Translation lookup failed:', odhLog('getTranslation', error, error && error.kind));
-            callback(odhFail(error && error.kind ? error.kind : 'network', error));
+            if (this.options?.dictSelected?.startsWith('ai:')) {
+                const title = chrome.i18n.getMessage('aiLookupFailed');
+                callback(odhOk(aiEscapeHtml(title + ': ' + error.message)));
+            } else callback(odhFail(error && error.kind ? error.kind : 'network', error));
         }
     }
 
@@ -360,6 +387,7 @@ class ODHServiceworker {
     // Option page and Brower Action page requests handlers.
     // NOTE: applies only — the caller records this.options as its closing step.
     async setupOptions(options) {
+        this.refreshAiDictionaries(options);
         this.setFrontendOptions(options);
 
         switch (options.services) {
@@ -385,7 +413,7 @@ class ODHServiceworker {
         const scriptsset = Array.from(new Set(defaultscripts.concat(newscripts.split(',').filter(x => x).map(x => x.trim()))));
         let { loaded, failed } = await this.loadScripts(scriptsset);
 
-        let namelist = loaded.map(x => x.result.objectname);
+        let namelist = [...loaded.map(x => x.result.objectname), ...this.aiDictionaryEntries(options).map(item => item.objectname)];
         if (namelist.length > 0 && !namelist.includes(options.dictSelected)) {
             // WHY: the selection moves without any UI signal, so the console names the
             // dictionary that could not be selected and the one that took over.
@@ -393,7 +421,7 @@ class ODHServiceworker {
             console.info(`Dictionary ${options.dictSelected} ${reason}, switching to ${namelist[0]}`);
             options.dictSelected = namelist[0];
         }
-        options.dictNamelist = loaded.map(x => x.result);
+        options.dictNamelist = [...loaded.map(x => x.result), ...this.aiDictionaryEntries(options)];
     }
 
     async optionsChanged(options) {
@@ -410,6 +438,7 @@ class ODHServiceworker {
         this.options = options;
         await this.setScriptsOptions(this.options);
         await optionsSave(this.options);
+        this.setFrontendOptions(this.options);
     }
 
     // Option pages API
@@ -495,13 +524,50 @@ class ODHServiceworker {
     async setScriptsOptions(options) {
         // Keep credentials and service endpoints out of the dictionary sandbox.
         const scriptOptions = { ...options };
-        for (const field of ['id', 'password', 'ankiconnecturl']) {
+        for (const field of ['id', 'password', 'ankiconnecturl', 'aiConfigurations', 'openaiApiKey', 'geminiApiKey', 'deepseekApiKey']) {
             delete scriptOptions[field];
+        }
+        if (scriptOptions.dictSelected?.startsWith('ai:')) {
+            scriptOptions.dictSelected = scriptOptions.dictNamelist.find(item => !item.objectname.startsWith('ai:'))?.objectname || 'builtin_encn_Collins';
         }
         return await odhSendMessage(TO_OFFSCREEN, {action:'setScriptsOptions', params:{options: scriptOptions}});
     }
 
-    async findTerm(expression) {
+    async getAiCollinsHeader(expression) {
+        try {
+            const header = await odhSendMessage(TO_OFFSCREEN, { action: 'getCollinsHeader', params: { expression } });
+            return header && typeof header.expression === 'string' ? header : null;
+        } catch { return null; }
+    }
+
+    async findTerm(expression, context = '') {
+        await this.optionsReady;
+        const selected = this.options?.dictSelected;
+        if (selected?.startsWith('ai:')) {
+            const config = this.options.aiConfigurations?.find(item => 'ai:' + item.id === selected);
+            if (!config) throw new Error('AI configuration not found');
+            const headerPending = this.getAiCollinsHeader(expression);
+            const definition = await aiLookup(config, expression, context);
+            const header = await headerPending;
+            if (!header) return definition;
+            const stars = Math.max(0, Math.min(5, Number(header.stars) || 0));
+            const rating = stars ? `<span class="ai-collins-star">${'★'.repeat(stars)}</span>` : '';
+            const ranks = (header.ranks || []).map(rank => `<span class="ai-collins-rank">${aiEscapeHtml(rank)}</span>`).join('');
+            // Keep the header self-contained: Anki fields do not load frame.css.
+            // These selectors also survive the popup's dictionary-style filter.
+            const headerStyle = `<style>
+                span.ai-collins-star { color: #ffbb00; }
+                span.ai-collins-rank { margin: 0 3px; padding: 0 3px; font-weight: normal; font-size: 0.8em; color: white; background-color: #5cb85c; border-radius: 3px; }
+            </style>`;
+            return [{
+                expression: aiEscapeHtml(header.expression),
+                reading: aiEscapeHtml(header.reading || ''),
+                extrainfo: headerStyle + rating + ranks,
+                audios: header.audios || [],
+                definitions: [definition],
+                sentence: context
+            }];
+        }
         return await odhSendMessage(TO_OFFSCREEN, {action:'findTerm', params:{expression}});
     }
 
@@ -515,12 +581,11 @@ class ODHServiceworker {
 // per site); extension pages by their exact url.
 function senderSource(sender) {
     if (!sender || sender.id !== chrome.runtime.id) return null;
-    if (sender.tab) return 'frontend';
     switch (sender.url) {
         case chrome.runtime.getURL('bg/offscreen.html'): return 'offscreen';
         case chrome.runtime.getURL('bg/options.html'): return 'options';
         case chrome.runtime.getURL('bg/popup.html'): return 'popup';
-        default: return null;
+        default: return sender.tab ? 'frontend' : null;
     }
 }
 
@@ -528,6 +593,9 @@ importScripts('ankiconnect.js');
 importScripts('builtin.js');
 importScripts('deinflector.js');
 importScripts('utils.js');
+importScripts('../../lib/marked-18.1.2.umd.js');
+importScripts('ai_markdown.js');
+importScripts('ai_client.js');
 importScripts('../../lib/envelope.js');
 importScripts('../../lib/message.js');
 

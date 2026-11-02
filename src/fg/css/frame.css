@@ -50,6 +50,10 @@ body {
   display: inline-block;
 }
 
+/* Youdao Collins metadata is used only by the AI card header. */
+.ai-collins-star { color: #ffbb00; }
+.ai-collins-rank { margin: 0 3px; padding: 0 3px; font-weight: normal; font-size: 0.8em; color: white; background-color: #5cb85c; border-radius: 3px; }
+
 .odh-definition,
 .odh-sentence {
   display: block;
@@ -62,6 +66,22 @@ body {
   word-wrap: break-word;
   overflow: auto;  
 }
+/* Markdown generated from AI answers; regular dictionary styles stay separate. */
+.odh-markdown { overflow-wrap: anywhere; }
+.odh-markdown > :first-child { margin-top: 0; }
+.odh-markdown > :last-child { margin-bottom: 0; }
+.odh-markdown p { margin: 0.6em 0; }
+.odh-markdown h1, .odh-markdown h2, .odh-markdown h3,
+.odh-markdown h4, .odh-markdown h5, .odh-markdown h6 { font-size: 1.1em; line-height: 1.4; margin: 0.8em 0 0.4em; }
+.odh-markdown ul, .odh-markdown ol { padding-left: 1.6em; margin: 0.5em 0; }
+.odh-markdown blockquote { margin: 0.6em 0; padding-left: 0.8em; border-left: 3px solid #cbd5e1; color: #555; }
+.odh-markdown code { font-family: Consolas, monospace; background: #f1f5f9; border-radius: 3px; padding: 0.1em 0.3em; }
+.odh-markdown pre { overflow-x: auto; background: #f1f5f9; padding: 8px; border-radius: 4px; }
+.odh-markdown pre code { padding: 0; white-space: pre; }
+.odh-markdown table { border-collapse: collapse; margin: 0.6em 0; }
+.odh-markdown th, .odh-markdown td { border: 1px solid #cbd5e1; padding: 4px 7px; }
+.odh-markdown th { background: #f1f5f9; }
+
 #odh-context{
   font-family: 'Open Sans', Helvetica, Arial, 'Microsoft Yahei', Sans-serif;
   background:#fffff4;

@@ -399,3 +399,19 @@ test('initBackend rebuilds dictionary scripts even when the configuration is unc
     await fixture.worker.options_optionsChanged({ options: { ...options }, callback() {} });
     assert.equal(loads, loadsAfterFirstSave, 'saving an unchanged configuration does not reload the scripts');
 });
+
+
+test('AI credentials are retained internally but excluded from frontend and dictionary messages', async () => {
+    const fixture = settingsWorker({ stubScripts: false });
+    const options = { enabled: true, aiConfigurations: [{ apiKey: 'synthetic-ai-secret' }], openaiApiKey: 'legacy-secret' };
+    const frontend = fixture.worker.frontendOptions(options);
+    assert.equal(frontend.aiConfigurations, undefined);
+    assert.equal(frontend.openaiApiKey, undefined);
+    assert.equal(frontend.enabled, true);
+    let sent;
+    fixture.chrome.runtime.sendMessage = async request => { sent = request.params.options; return odhOk(null); };
+    await fixture.worker.setScriptsOptions(options);
+    assert.equal(sent.aiConfigurations, undefined);
+    assert.equal(sent.openaiApiKey, undefined);
+    assert.equal(options.aiConfigurations[0].apiKey, 'synthetic-ai-secret');
+});

@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
+const { JSDOM } = require('jsdom');
 
 const frameCss = fs.readFileSync(path.resolve(__dirname, '../../src/fg/css/frame.css'), 'utf8');
 
@@ -49,4 +50,30 @@ test('the baseline is a trailing section outside the odh- namespace', () => {
     for (const selector of baselineSelectors) {
         assert.ok(!selector.includes('odh-'), 'baseline selectors must not target extension UI classes');
     }
+});
+
+test('ordinary definitions keep their original card frame independently of Markdown styles', () => {
+    const dom = new JSDOM('<!doctype html><style>' + frameCss + '</style><div class="odh-definition">Dictionary definition</div><div class="odh-sentence">Context</div>');
+    try {
+        const definition = dom.window.getComputedStyle(dom.window.document.querySelector('.odh-definition'));
+        assert.equal(definition.padding, '5px');
+        assert.equal(definition.marginTop, '5px');
+        assert.equal(definition.borderTopWidth, '1px');
+        assert.equal(definition.borderTopStyle, 'solid');
+        assert.equal(definition.borderRadius, '3px');
+        assert.equal(definition.backgroundColor, 'rgb(254, 254, 254)');
+        const sentence = dom.window.getComputedStyle(dom.window.document.querySelector('.odh-sentence'));
+        assert.equal(sentence.padding, '0px');
+        assert.equal(sentence.borderTopWidth, '2px');
+        assert.equal(sentence.borderTopStyle, 'dashed');
+    } finally { dom.window.close(); }
+});
+
+test('Markdown formatting applies only inside the Markdown wrapper', () => {
+    const dom = new JSDOM('<!doctype html><style>' + frameCss + '</style><div class="odh-definition"><code id="ordinary">dictionary code</code><div class="odh-markdown"><code id="markdown">AI code</code></div></div>');
+    try {
+        const style = id => dom.window.getComputedStyle(dom.window.document.getElementById(id));
+        assert.equal(style('markdown').backgroundColor, 'rgb(241, 245, 249)');
+        assert.notEqual(style('ordinary').backgroundColor, style('markdown').backgroundColor);
+    } finally { dom.window.close(); }
 });

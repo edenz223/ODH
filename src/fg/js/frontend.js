@@ -84,15 +84,17 @@ class ODHFrontend {
             clearTimeout(this.timeout);
         }
 
+        // Capture live captions before they change during the debounce delay.
+        const context = { expression: selectedText(), sentence: getSentence(this.maxContext) };
         // wait 500 ms after the last selection change event
         this.timeout = setTimeout(() => {
-            this.onSelectionEnd(e);
+            this.onSelectionEnd(e, context);
             //var selEndEvent = new CustomEvent('selectionend');
             //window.dispatchEvent(selEndEvent);
         }, 500);
     }
 
-    async onSelectionEnd(_e) {
+    async onSelectionEnd(_e, context) {
 
         if (!this.enabled)
             return;
@@ -102,12 +104,15 @@ class ODHFrontend {
 
         // reset selection timeout
         this.timeout = null;
-        const expression = selectedText();
+        const expression = context ? context.expression : selectedText();
         if (isEmpty(expression)) return;
 
-        let result = await frontend_api.getTranslation(expression);
+        const sentence = context ? context.sentence : getSentence(this.maxContext);
+        const lookupId = this.lookupId = (this.lookupId || 0) + 1;
+        let result = await frontend_api.getTranslation(expression, sentence);
+        if (lookupId !== this.lookupId) return;
         if (result == null || result.length == 0) return;
-        this.notes = this.buildNote(result);
+        this.notes = this.buildNote(result, expression, sentence);
         this.popup.showNextTo({ x: this.point.x, y: this.point.y, }, await this.renderPopup(this.notes));
 
     }
@@ -189,10 +194,7 @@ class ODHFrontend {
         this.audio[url] = audio;
     }
 
-    buildNote(result) {
-        //get 1 sentence around the expression.
-        const expression = selectedText();
-        const sentence = getSentence(this.maxContext);
+    buildNote(result, expression = selectedText(), sentence = getSentence(this.maxContext)) {
         this.sentence = sentence;
         let tmpl = {
             css: '',

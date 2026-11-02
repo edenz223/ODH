@@ -1,4 +1,4 @@
-/* global api, odhOk, odhFail */
+/* global fetchCollinsHeader, api, odhOk, odhFail */
 // Sandbox control-plane traffic lives here rather than on window.api: replies and
 // the init trigger register no callback of their own, and window.api is reachable
 // by user dictionary scripts, which must not be able to replace them.
@@ -102,6 +102,16 @@ class Sandbox {
             return;
         }
         replyFail('not-ready', `Dictionary not loaded: ${selected}`, callbackId);
+    }
+
+    async backend_getCollinsHeader(params) {
+        const { expression, callbackId } = params;
+        try {
+            replyOk(await fetchCollinsHeader(expression), callbackId);
+        } catch {
+            // Header enrichment is optional: an offline dictionary must not hide AI answers.
+            replyOk(null, callbackId);
+        }
     }
 
     async backend_findTerm(params) {

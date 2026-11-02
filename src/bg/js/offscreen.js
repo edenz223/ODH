@@ -1,7 +1,7 @@
 /* global Agent, odhOk, odhFail, odhSendMessage, odhPostMessage, TO_WORKER, TO_OFFSCREEN */
 // Actions the worker may ask the offscreen document to hand to the sandbox. playAudio is
 // deliberately absent: the offscreen plays it locally and never forwards it.
-const ODH_SANDBOX_ACTIONS = ['loadScript', 'setScriptsOptions', 'findTerm'];
+const ODH_SANDBOX_ACTIONS = ['loadScript', 'setScriptsOptions', 'findTerm', 'getCollinsHeader'];
 class ODHOffscreen {
     constructor() {
         this.audios = {};

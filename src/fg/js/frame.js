@@ -58,7 +58,13 @@ function registerSoundLinks() {
 
 function initSpellnTranslation(){
     document.querySelector('#odh-container').appendChild(spell());
-    document.querySelector('.spell-content').innerHTML=document.querySelector('#context').innerHTML;
+    const source = document.querySelector('#context');
+    const target = document.querySelector('.spell-content');
+
+    // Copy nodes without an HTML assignment, which Trusted Types can block.
+    target.replaceChildren(
+        ...Array.from(source.childNodes, node => node.cloneNode(true))
+    );
     if (document.querySelector('#monolingual').innerText == '1')
         hideTranslation();
 }

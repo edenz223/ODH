@@ -28,6 +28,14 @@ class OptionsAPI{
     }    
 
     async optionsChanged(options){
+        if (options.dictSelected?.startsWith('ai:')) {
+            const config = options.aiConfigurations?.find(item => 'ai:' + item.id === options.dictSelected);
+            if (config) {
+                const url = new URL(config.endpoint);
+                const official = ['https://api.openai.com', 'https://generativelanguage.googleapis.com', 'https://api.deepseek.com'].includes(url.origin);
+                if (official && !await chrome.permissions.request({ origins: [url.origin + '/*'] })) return null;
+            }
+        }
         return await this.sendtoServiceworker({action:'optionsChanged',params:{options}});
     }    
 }

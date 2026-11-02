@@ -4,6 +4,9 @@ import globals from 'globals';
 // These bindings are consumed by other classic scripts or the dictionary loader.
 // Keep the actual class IDs: filenames do not always match the evaluated classes.
 const classicExports = {
+    'src/bg/sandbox/collins_header.js': ['fetchCollinsHeader'],
+    'src/bg/js/ai_markdown.js': ['aiRenderMarkdown'],
+    'src/bg/js/ai_client.js': ['AI_PROVIDERS', 'AI_DEFAULT_PROMPTS', 'aiReadConfigurations', 'aiBuildRequest', 'aiEscapeHtml', 'aiLookup', 'aiListModels'],
     'src/lib/agent.js': ['Agent'],
     'src/lib/envelope.js': ['odhErrorMessage', 'odhLog', 'odhError', 'odhOk', 'odhFail', 'odhIsEnvelope', 'odhUnwrap'],
     'src/lib/message.js': ['ODH_DEFAULT_REQUEST_TIMEOUT_MS', 'ODH_DICTIONARY_FETCH_TIMEOUT_MS', 'odhWithTimeout', 'odhSendMessage', 'odhPostMessage', 'TO_WORKER', 'TO_OFFSCREEN', 'TO_FRONTEND'],
@@ -59,7 +62,11 @@ export default [
             // class names are persisted dictionary IDs, so they are excluded
             // from hygiene checks until they are migrated one by one.
             'src/dict/**',
+            // Legacy YouTube/Shadow DOM helpers adapted from the user-provided extension.
+            'src/fg/js/text.js',
             'src/lib/jquery-3.0.0.min.js',
+            // Vendored Marked 18.1.2 (MIT), distributed locally for MV3.
+            'src/lib/marked-18.1.2.umd.js',
             // Vendored DOMPurify 3.4.11 (Apache-2.0 / MPL-2.0, cure53, tag 3.4.11,
             // sha256 dbabb5b2…); minified third-party file, used as-is.
             'src/lib/purify-3.4.11.min.js',
@@ -115,6 +122,7 @@ export default [
             'src/lib/agent.js',
             'src/bg/js/offscreen.js',
             'src/bg/js/options.js',
+            'src/bg/js/ai_options.js',
             'src/bg/js/popup.js',
             'src/bg/js/tabmenu.js',
             'src/bg/sandbox/*.js',
@@ -126,7 +134,7 @@ export default [
     {
         // envelope.js is shared by every context and only uses console; options_api.js
         // runs on the options/action pages, which the chrome block does not cover.
-        files: ['src/lib/envelope.js', 'src/bg/js/options_api.js'],
+        files: ['src/lib/envelope.js', 'src/bg/js/options_api.js', 'src/bg/js/ai_client.js'],
         languageOptions: { globals: globals.browser }
     },
     {
@@ -146,6 +154,7 @@ export default [
             'src/bg/js/offscreen.js',
             'src/bg/js/options_api.js',
             'src/bg/js/options.js',
+            'src/bg/js/ai_options.js',
             'src/bg/js/popup.js',
             'src/fg/js/frontend_api.js',
             'src/fg/js/frontend.js'

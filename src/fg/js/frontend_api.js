@@ -2,9 +2,9 @@
 class FrontendAPI{
     // The page-level contract stays "value or null", so UI callers still need no try/catch;
     // the classified reason is kept in the console.
-    async sendtoServiceworker(request){
+    async sendtoServiceworker(request, timeoutMs){
         try {
-            return await odhSendMessage(TO_WORKER, request);
+            return await odhSendMessage(TO_WORKER, request, timeoutMs);
         } catch (error) {
             console.warn('Worker request failed:', odhLog(request.action, error, error && error.kind));
             return null;
@@ -15,8 +15,8 @@ class FrontendAPI{
         return await this.sendtoServiceworker({action:'getVersion', params:{}});
     }
 
-    async getTranslation(expression){
-        return await this.sendtoServiceworker({action:'getTranslation', params:{expression}});
+    async getTranslation(expression, context = ''){
+        return await this.sendtoServiceworker({action:'getTranslation', params:{expression, context}}, 30000);
     }
 
     async addNote(notedef){

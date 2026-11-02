@@ -10,6 +10,10 @@ function sanitizeOptions(options) {
         services: 'none',
         id: '',
         password: '',
+        aiConfigurations: null,
+        openaiApiKey: '',
+        geminiApiKey: '',
+        deepseekApiKey: '',
 
         ankiconnecturl: 'http://127.0.0.1:8765', // define ankiconnect service ip and port
         duplicate: '1', // 0: not allowe duplicated cards; 1: allowe duplicated cards;

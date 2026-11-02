@@ -86,10 +86,13 @@ function frontendRealm() {
         { url: 'https://example.test/page', runScripts: 'outside-only' });
     const context = dom.getInternalVMContext();
     const sent = [];
+    loadClassic('src/lib/marked-18.1.2.umd.js', 'marked', {}, context);
+    loadClassic('src/bg/js/ai_client.js', 'aiEscapeHtml', {}, context);
+    loadClassic('src/bg/js/ai_markdown.js', 'aiRenderMarkdown', {}, context);
     loadClassic('src/lib/purify-3.4.11.min.js', 'window.DOMPurify', {}, context);
     loadClassic('src/lib/sanitize.js', 'sanitizeNote', {}, context);
     loadClassic('src/fg/js/frontend.js', 'window.odh_frontend', {
-        chrome: { runtime: { onMessage: { addListener() { } } } },
+        chrome: { runtime: { getURL: path => 'chrome-extension://test/' + path, onMessage: { addListener() { } } } },
         Popup: class {
             sendMessage(action, params) { sent.push({ action, params }); }
         },
@@ -105,7 +108,7 @@ function frontendRealm() {
         getSentence: () => 'a synthetic sentence',
         isValidElement: () => true
     }, context);
-    return { frontend: dom.window.odh_frontend, sent };
+    return { frontend: dom.window.odh_frontend, sent, renderMarkdown: text => dom.window.aiRenderMarkdown(text) };
 }
 
 test('buildNote sanitizes every note a dictionary returns', () => {
@@ -149,4 +152,49 @@ test('the Anki payload carries sanitized fields only', async () => {
     // The editable context is the user's own content and is deliberately left alone.
     assert.equal(payload.sentence, '<b>edited</b> sentence');
     assert.equal(payload.url, 'https://example.test/page', 'the url comes from the page, not the dictionary');
+});
+
+test('AI Markdown reaches popup and Anki as formatted, sanitized HTML', async () => {
+    const { frontend, sent, renderMarkdown } = frontendRealm();
+    const markdown = '# Meaning\n\n**river bank** and *shore*, with `bank`\n\n- on the bank\n- by the river\n\n> Typical usage\n\n| Word | Meaning |\n| --- | --- |\n| bank | shore |\n\n```text\nriver -> bank\n```';
+    frontend.notes = frontend.buildNote(renderMarkdown(markdown));
+    const html = frontend.notes[0].definitions[0];
+    for (const tag of ['h1', 'strong', 'em', 'code', 'ul', 'li', 'blockquote', 'table', 'pre']) {
+        assert.match(html, new RegExp('<' + tag + '[ >]'), `${tag} must be rendered`);
+    }
+    const popup = await frontend.renderPopup(frontend.notes);
+    assert.ok(popup.includes('<strong>river bank</strong>'));
+    await frontend.api_addNote({ nindex: 0, dindex: 0, context: 'On the bank.' });
+    const note = sent.find(item => item.action === 'addNote').note;
+    assert.ok(note.definition.includes('<strong>river bank</strong>'));
+    assert.ok(note.definitions.includes('<table>'));
+    assert.equal(note.definition.includes('**river bank**'), false);
+});
+
+test('Markdown raw HTML stays text and dangerous generated links are sanitized before display', () => {
+    const { frontend, renderMarkdown } = frontendRealm();
+    const html = frontend.buildNote(renderMarkdown('**Safe**\n\n<script>window.odhPwned=1</script>\n\n<img src=x onerror=alert(1)>\n\n[bad](javascript:alert(1))\n\n`<b>code</b>`'))[0].definitions[0];
+    const dom = new JSDOM(html);
+    assert.equal(dom.window.document.querySelector('script'), null);
+    assert.equal(dom.window.document.querySelector('img'), null);
+    assert.equal(dom.window.document.querySelector('[onerror]'), null);
+    assert.equal(dom.window.document.querySelector('a[href^="javascript:"]'), null);
+    assert.equal(dom.window.document.querySelector('strong').textContent, 'Safe');
+    assert.equal(dom.window.document.querySelector('code').textContent, '<b>code</b>');
+    dom.window.close();
+});
+
+test('Collins header styles stay with the extrainfo field through Anki export', async () => {
+    const { frontend, sent } = frontendRealm();
+    frontend.notes = frontend.buildNote([{
+        extrainfo: '<style>span.ai-collins-star{color:#ffbb00}span.ai-collins-rank{color:white;background-color:#5cb85c;border-radius:3px}</style><span class="ai-collins-star">★★★★★</span><span class="ai-collins-rank">CET4</span><span class="ai-collins-rank">TEM4</span>',
+        definitions: ['AI answer']
+    }]);
+    await frontend.api_addNote({ nindex: 0, dindex: 0, context: 'I hope so.' });
+    const extra = sent.find(item => item.action === 'addNote').note.extrainfo;
+    const dom = new JSDOM('<!doctype html><body>' + extra + '</body>');
+    try {
+        assert.equal(dom.window.getComputedStyle(dom.window.document.querySelector('.ai-collins-star')).color, 'rgb(255, 187, 0)');
+        assert.equal(dom.window.getComputedStyle(dom.window.document.querySelector('.ai-collins-rank')).backgroundColor, 'rgb(92, 184, 92)');
+    } finally { dom.window.close(); }
 });
