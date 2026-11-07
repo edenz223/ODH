@@ -2,6 +2,11 @@ name: Pre-release extension
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Optional X.Y.Z version; defaults to the current version with patch +1'
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -30,6 +35,8 @@ jobs:
           cache: npm
 
       - name: Prepare pre-release version
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
         run: |
           node <<'NODE'
           const fs = require('node:fs');
@@ -39,8 +46,16 @@ jobs:
             console.error(`Manifest (${version}) and package (${packageVersion}) versions must match.`);
             process.exit(1);
           }
-          const tag = `v${version}-pre.${process.env.GITHUB_RUN_ID}.${process.env.GITHUB_RUN_ATTEMPT}`;
-          fs.appendFileSync(process.env.GITHUB_ENV, `RELEASE_TAG=${tag}\n`);
+          const [major, minor, patch] = version.split('.').map(Number);
+          const releaseVersion = process.env.REQUESTED_VERSION.trim() || `${major}.${minor}.${patch + 1}`;
+          if (!/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(releaseVersion) ||
+              releaseVersion.split('.').some(part => Number(part) > 65535) ||
+              releaseVersion === '0.0.0') {
+            console.error('Pre-release version must be X.Y.Z, with each component between 0 and 65535, and must not be 0.0.0.');
+            process.exit(1);
+          }
+          const tag = `v${releaseVersion}-pre.${process.env.GITHUB_RUN_ID}.${process.env.GITHUB_RUN_ATTEMPT}`;
+          fs.appendFileSync(process.env.GITHUB_ENV, `PRE_RELEASE_VERSION=${releaseVersion}\nRELEASE_TAG=${tag}\n`);
           NODE
 
       - name: Install dependencies
@@ -56,6 +71,13 @@ jobs:
 
       - name: Package extension
         run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const manifestPath = './src/manifest.json';
+          const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+          manifest.version = process.env.PRE_RELEASE_VERSION;
+          fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 4)}\n`);
+          NODE
           mkdir -p dist
           cd src
           zip -r "../dist/odh-${RELEASE_TAG}.zip" . -x 'bg/data/*' '.DS_Store' '*/.DS_Store'
