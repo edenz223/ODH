@@ -106,6 +106,13 @@
     "lstDescription": { "message": "Description" },
 
     "btnSaveLoad": { "message": "Load Scripts" },
+    "btnExportConfig": { "message": "Export Config" },
+    "btnImportConfig": { "message": "Import Config" },
+    "msgConfigExported": { "message": "Configuration exported." },
+    "msgConfigExportFailed": { "message": "Configuration could not be exported." },
+    "msgConfigImported": { "message": "Configuration imported." },
+    "msgConfigImportFailed": { "message": "Configuration could not be imported." },
+    "msgConfigImportInvalid": { "message": "The selected file is not a valid configuration." },
     "btnSaveClose": { "message": "Save & Close" },
     "btnClose": { "message": "Close" },
 

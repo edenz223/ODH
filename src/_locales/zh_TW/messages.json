@@ -106,6 +106,13 @@
     "lstDescription": { "message": "腳本描述" },
 
     "btnSaveLoad": { "message": "加載腳本" },
+    "btnExportConfig": { "message": "匯出設定" },
+    "btnImportConfig": { "message": "匯入設定" },
+    "msgConfigExported": { "message": "設定已匯出。" },
+    "msgConfigExportFailed": { "message": "設定匯出失敗。" },
+    "msgConfigImported": { "message": "設定已匯入。" },
+    "msgConfigImportFailed": { "message": "設定匯入失敗。" },
+    "msgConfigImportInvalid": { "message": "所選檔案不是有效的設定檔。" },
     "btnSaveClose": { "message": "保存" },
     "btnClose": { "message": "退出" },
 

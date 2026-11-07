@@ -113,8 +113,15 @@ function onScriptListChange() {
     $('#sysscripts').val(dictLibrary.join());
 }
 
+let cloudColumnsHidden = true;
+
+function setCloudColumnsHidden(hidden) {
+    cloudColumnsHidden = hidden;
+    $('.sl-col-cloud').toggleClass('hidden', hidden);
+}
+
 function onHiddenClicked() {
-    $('.sl-col-cloud').toggleClass('hidden');
+    setCloudColumnsHidden(!cloudColumnsHidden);
 }
 
 async function onAnkiTypeChanged(e) {
@@ -204,9 +211,116 @@ function onCloseClicked() {
     window.close();
 }
 
-async function onReady() {
-    localizeHtmlPage();
-    let options = await optionsLoad();
+const CONFIG_EXPORT_FORMAT = 'odh-config';
+const CONFIG_EXPORT_VERSION = 1;
+// Runtime state rebuilt from the installed scripts on every load, so it would only be stale.
+const CONFIG_EXCLUDED_KEYS = ['dictNamelist'];
+
+function configExportPayload(options) {
+    const exported = { ...options };
+    for (const key of CONFIG_EXCLUDED_KEYS) delete exported[key];
+    return {
+        format: CONFIG_EXPORT_FORMAT,
+        version: CONFIG_EXPORT_VERSION,
+        exportedAt: new Date().toISOString(),
+        options: exported,
+    };
+}
+
+// Accepts both the wrapped export above and a bare settings object.
+function parseConfig(text) {
+    let parsed;
+    try {
+        parsed = JSON.parse(text);
+    } catch {
+        return null;
+    }
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+    if (parsed.format !== undefined && parsed.format !== CONFIG_EXPORT_FORMAT) return null;
+    const options = Object.prototype.hasOwnProperty.call(parsed, 'options') ? parsed.options : parsed;
+    if (!options || typeof options !== 'object' || Array.isArray(options)) return null;
+    return options;
+}
+
+function mergeImportedOptions(current, imported) {
+    const merged = { ...current };
+    for (const key of Object.keys(imported)) {
+        // WHY: imported files are untrusted input, and a `__proto__` key would otherwise
+        // reach the prototype through the assignment below.
+        if (CONFIG_EXCLUDED_KEYS.includes(key) || ['__proto__', 'constructor', 'prototype'].includes(key)) continue;
+        merged[key] = imported[key];
+    }
+    return merged;
+}
+
+function downloadConfig(options) {
+    const blob = new Blob([JSON.stringify(configExportPayload(options), null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `odh-config-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+function setConfigStatus(messageKey, failed = false) {
+    $('#config-status')
+        .text(messageKey ? chrome.i18n.getMessage(messageKey) : '')
+        .toggleClass('error', failed);
+}
+
+async function onExportClicked(e) {
+    if (!e.originalEvent) return;
+    setConfigStatus('');
+    try {
+        downloadConfig(await optionsLoad());
+        setConfigStatus('msgConfigExported');
+    } catch {
+        setConfigStatus('msgConfigExportFailed', true);
+    }
+}
+
+function onImportClicked(e) {
+    if (!e.originalEvent) return;
+    setConfigStatus('');
+    $('#import-file').val('');
+    $('#import-file').click();
+}
+
+async function onImportFileChanged(e) {
+    const input = e.target;
+    const file = input.files && input.files[0];
+    if (!file) return;
+
+    let imported;
+    try {
+        imported = parseConfig(await file.text());
+    } catch {
+        imported = null;
+    }
+    if (!imported) {
+        setConfigStatus('msgConfigImportInvalid', true);
+        input.value = '';
+        return;
+    }
+
+    try {
+        const current = await optionsLoad();
+        const newOptions = await options_api.optionsChanged(mergeImportedOptions(current, imported));
+        if (!newOptions) throw new Error('Settings were not confirmed.');
+        applyOptionsToPage(newOptions);
+        updateServiceStatus(newOptions);
+        setConfigStatus('msgConfigImported');
+    } catch {
+        setConfigStatus('msgConfigImportFailed', true);
+    } finally {
+        input.value = '';
+    }
+}
+
+function applyOptionsToPage(options) {
     $('#enabled').prop('checked', options.enabled);
     $('#mouseselection').prop('checked', options.mouseselection);
     $('#hotkey').val(options.hotkey);
@@ -235,12 +349,21 @@ async function onReady() {
     $('#sysscripts').val(options.sysscripts);
     $('#udfscripts').val(options.udfscripts);
     populateSysScriptsList(options.sysscripts);
-    onHiddenClicked();
+    setCloudColumnsHidden(cloudColumnsHidden);
+}
+
+async function onReady() {
+    localizeHtmlPage();
+    let options = await optionsLoad();
+    applyOptionsToPage(options);
 
     $('#connect').click(onServicesChanged);
     $('#saveload').click(onSaveClicked);
     $('#saveclose').click(onSaveClicked);
     $('#close').click(onCloseClicked);
+    $('#export-config').click(onExportClicked);
+    $('#import-config').click(onImportClicked);
+    $('#import-file').change(onImportFileChanged);
     $('.gif').hide();
 
     $('.sl-col-onoff, .sl-col-cloud').click(onScriptListChange);

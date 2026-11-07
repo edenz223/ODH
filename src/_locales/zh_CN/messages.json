@@ -106,6 +106,13 @@
     "lstDescription": { "message": "脚本描述" },
 
     "btnSaveLoad": { "message": "加载脚本" },
+    "btnExportConfig": { "message": "导出配置" },
+    "btnImportConfig": { "message": "导入配置" },
+    "msgConfigExported": { "message": "配置已导出。" },
+    "msgConfigExportFailed": { "message": "配置导出失败。" },
+    "msgConfigImported": { "message": "配置已导入。" },
+    "msgConfigImportFailed": { "message": "配置导入失败。" },
+    "msgConfigImportInvalid": { "message": "所选文件不是有效的配置文件。" },
     "btnSaveClose": { "message": "保存" },
     "btnClose": { "message": "退出" },
 

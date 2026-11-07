@@ -207,11 +207,15 @@
         <footer class="page-actions">
             <div class="load-actions">
                 <button type="button" class="button" id="saveload" data-i18n="btnSaveLoad">Load Scripts</button>
+                <button type="button" class="button" id="export-config" data-i18n="btnExportConfig">Export Config</button>
+                <button type="button" class="button" id="import-config" data-i18n="btnImportConfig">Import Config</button>
+                <input type="file" id="import-file" accept=".json,application/json" hidden>
                 <div class="gifs" role="status" aria-live="polite">
                     <span class="gif" id="gif-load"><img src="/fg/img/load.gif" alt=""></span>
                     <span class="gif" id="gif-good"><img src="/fg/img/good.png" alt=""></span>
                     <span class="gif" id="gif-fail"><img src="/fg/img/fail.png" alt=""></span>
                 </div>
+                <span id="config-status" class="config-status" role="status" aria-live="polite"></span>
             </div>
             <div class="save-actions">
                 <button type="button" class="button primary" id="saveclose" data-i18n="btnSaveClose">Save and Close</button>

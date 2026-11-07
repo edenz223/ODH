@@ -237,6 +237,16 @@ hr {
     min-width: 20px;
 }
 
+.config-status {
+    min-width: 0;
+    font-size: 12px;
+    color: #4b6b55;
+}
+
+.config-status.error {
+    color: #b23b3b;
+}
+
 .gif img {
     display: block;
     width: 20px;
