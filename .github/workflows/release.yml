@@ -1,0 +1,77 @@
+name: Release extension
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+    env:
+      RELEASE_TAG: ${{ github.ref_name }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Validate release version
+        run: |
+          node <<'NODE'
+          const { version } = require('./src/manifest.json');
+          const packageVersion = require('./package.json').version;
+          if (process.env.RELEASE_TAG !== `v${version}` || packageVersion !== version) {
+            console.error(`Tag (${process.env.RELEASE_TAG}), manifest (${version}), and package (${packageVersion}) versions must match.`);
+            process.exit(1);
+          }
+          NODE
+
+      - name: Install dependencies
+        run: |
+          npm install --global npm@11.19.0
+          npm ci
+
+      - name: Lint and test
+        run: |
+          npm run lint
+          npm run test:contracts
+          npm run test:unit
+
+      - name: Package extension
+        run: |
+          mkdir -p dist
+          cd src
+          zip -r "../dist/odh-${RELEASE_TAG}.zip" . -x 'bg/data/*' '.DS_Store' '*/.DS_Store'
+          cd ../dist
+          sha256sum "odh-${RELEASE_TAG}.zip" > SHA256SUMS
+          unzip -t "odh-${RELEASE_TAG}.zip"
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if gh release view "$RELEASE_TAG" > /dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" "dist/odh-${RELEASE_TAG}.zip" dist/SHA256SUMS --clobber
+          else
+            gh release create "$RELEASE_TAG" "dist/odh-${RELEASE_TAG}.zip" dist/SHA256SUMS \
+              --verify-tag --title "ODH ${RELEASE_TAG}" --generate-notes
+          fi

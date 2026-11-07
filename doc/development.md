@@ -2,6 +2,21 @@
 
 [[简体中文版](development.zh_CN.md)]
 
+## Automated releases
+
+Push a `v<version>` tag to run lint, contract tests, and unit tests. Once they pass, GitHub Actions creates a GitHub Release with `odh-v<version>.zip` and `SHA256SUMS`. Re-running the workflow for the same tag updates the release assets.
+
+Before releasing, update the project version in `src/manifest.json`, `package.json`, and `package-lock.json`. The tag must match the manifest and package versions. For example, after committing and pushing the current `1.1.1` version:
+
+```sh
+git tag v1.1.1
+git push origin v1.1.1
+```
+
+The ZIP contains the extension files from `src/`, with `manifest.json` at the archive root, excluding the local private dictionary directory `bg/data/`. Extract it, enable Developer mode in Chrome at `chrome://extensions`, and choose **Load unpacked** to select the extracted directory.
+
+The workflow uses the automatically supplied `GITHUB_TOKEN`; no additional secret is required. It publishes downloadable files without submitting to a browser extension store.
+
 ## Start your own script
 
 If you want to display your own online dictionary content, you need build the script by yourself.

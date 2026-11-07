@@ -1,5 +1,20 @@
 # 开发指南
 
+## 自动发布
+
+推送 `v版本号` 标签时，GitHub Actions 会运行 lint、契约测试和单元测试，通过后创建 GitHub Release，并上传 `odh-v版本号.zip` 和 `SHA256SUMS`。重跑同一标签的工作流会更新该 Release 的附件。
+
+发布前需将 `src/manifest.json`、`package.json` 和 `package-lock.json` 中的项目版本同步更新；标签必须与前两个文件的版本一致。例如，当前版本为 `1.1.1`，提交并推送代码后执行：
+
+```sh
+git tag v1.1.1
+git push origin v1.1.1
+```
+
+ZIP 仅包含 `src/` 内的扩展文件，根目录为 `manifest.json`，不包含本地私有词典目录 `bg/data/`。下载后解压，在 Chrome 的 `chrome://extensions` 中启用开发者模式，点击“加载已解压的扩展程序”并选择解压目录。
+
+工作流使用 GitHub 自动提供的 `GITHUB_TOKEN`，无需额外配置 Secret。该流程发布下载包，不会自动提交到浏览器扩展商店。
+
 ## 创建你的专属脚本
 
 如果您想要显示你个性化在线词典内容，您需要自行创建脚本。因为安全原因，目前自建脚本只能运行在沙盒(HTML5 sandbox)内，但这对于解析网页词典已经够用了。

@@ -1,6 +1,6 @@
 {
     "name": "odh",
-    "version": "1.0.1",
+    "version": "1.1.1",
     "private": true,
     "description": "Development tools for the ODH Chrome extension",
     "license": "MIT",
