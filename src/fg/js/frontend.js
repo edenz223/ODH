@@ -1,4 +1,4 @@
-/* global Popup, rangeFromPoint, TextSourceRange, selectedText, isEmpty, getSentence, isValidElement, sanitizeNote */
+/* global Popup, rangeFromPoint, getAnchorRect, TextSourceRange, selectedText, isEmpty, getSentence, isValidElement, sanitizeNote */
 // Actions the popup frame may ask the content script to perform.
 const ODH_FRAME_ACTIONS = ['addNote', 'playAudio', 'playSound'];
 
@@ -84,8 +84,8 @@ class ODHFrontend {
             clearTimeout(this.timeout);
         }
 
-        // Capture live captions before they change during the debounce delay.
-        const context = { expression: selectedText(), sentence: getSentence(this.maxContext) };
+        // Capture live captions and their position before they change during the debounce delay.
+        const context = { expression: selectedText(), sentence: getSentence(this.maxContext), anchor: getAnchorRect(this.point) };
         // wait 500 ms after the last selection change event
         this.timeout = setTimeout(() => {
             this.onSelectionEnd(e, context);
@@ -108,12 +108,13 @@ class ODHFrontend {
         if (isEmpty(expression)) return;
 
         const sentence = context ? context.sentence : getSentence(this.maxContext);
+        const anchor = context ? context.anchor : getAnchorRect(this.point);
         const lookupId = this.lookupId = (this.lookupId || 0) + 1;
         let result = await frontend_api.getTranslation(expression, sentence);
         if (lookupId !== this.lookupId) return;
         if (result == null || result.length == 0) return;
         this.notes = this.buildNote(result, expression, sentence);
-        this.popup.showNextTo({ x: this.point.x, y: this.point.y, }, await this.renderPopup(this.notes));
+        this.popup.showNextTo(anchor, await this.renderPopup(this.notes));
 
     }
 

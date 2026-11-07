@@ -32,7 +32,7 @@ test('caption snapshot survives removal during debounce and during AI lookup', a
         document: { addEventListener() {} },
         window: { addEventListener() {} },
         setTimeout: fn => { debounce = fn; return 1; }, clearTimeout() {},
-        selectedText: () => word, getSentence: () => sentence,
+        selectedText: () => word, getSentence: () => sentence, getAnchorRect: () => null,
         isEmpty: value => !value, isValidElement: () => true, sanitizeNote: note => note,
         Popup: class { showNextTo() {} }, FrontendAPI: class {}
     };

@@ -20,7 +20,7 @@ const classicExports = {
     'src/bg/sandbox/sign.js': ['hash'],
     'src/fg/js/frontend_api.js': ['FrontendAPI'],
     'src/fg/js/popup.js': ['Popup'],
-    'src/fg/js/range.js': ['rangeFromPoint', 'TextSourceRange'],
+    'src/fg/js/range.js': ['rangeFromPoint', 'getAnchorRect', 'TextSourceRange'],
     'src/fg/js/text.js': ['isEmpty', 'getSentence', 'selectedText', 'isValidElement'],
     'src/fg/js/frame.js': ['api_setActionState'],
     'src/fg/js/spell.js': ['spell'],
