@@ -1,0 +1,73 @@
+name: Pre-release extension
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pre-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  pre-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Prepare pre-release version
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const { version } = require('./src/manifest.json');
+          const packageVersion = require('./package.json').version;
+          if (packageVersion !== version) {
+            console.error(`Manifest (${version}) and package (${packageVersion}) versions must match.`);
+            process.exit(1);
+          }
+          const tag = `v${version}-pre.${process.env.GITHUB_RUN_ID}.${process.env.GITHUB_RUN_ATTEMPT}`;
+          fs.appendFileSync(process.env.GITHUB_ENV, `RELEASE_TAG=${tag}\n`);
+          NODE
+
+      - name: Install dependencies
+        run: |
+          npm install --global npm@11.19.0
+          npm ci
+
+      - name: Lint and test
+        run: |
+          npm run lint
+          npm run test:contracts
+          npm run test:unit
+
+      - name: Package extension
+        run: |
+          mkdir -p dist
+          cd src
+          zip -r "../dist/odh-${RELEASE_TAG}.zip" . -x 'bg/data/*' '.DS_Store' '*/.DS_Store'
+          cd ../dist
+          sha256sum "odh-${RELEASE_TAG}.zip" > SHA256SUMS
+          unzip -t "odh-${RELEASE_TAG}.zip"
+
+      - name: Publish GitHub Pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release create "$RELEASE_TAG" "dist/odh-${RELEASE_TAG}.zip" dist/SHA256SUMS \
+            --target "$GITHUB_SHA" --title "ODH ${RELEASE_TAG}" \
+            --prerelease --latest=false --generate-notes
