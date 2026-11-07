@@ -1,3 +1,4 @@
+/* global getSelectedRange */
 function rangeFromPoint(point) {
     if (!document.caretRangeFromPoint) {
         document.caretRangeFromPoint = (x, y) => {
@@ -13,6 +14,31 @@ function rangeFromPoint(point) {
     }
 
     return document.caretRangeFromPoint(point.x, point.y);
+}
+
+function rectFromRange(range) {
+    if (!range) return null;
+    try {
+        const rect = range.getBoundingClientRect();
+        if (rect.width || rect.height) return rect;
+        const rects = range.getClientRects();
+        const last = rects[rects.length - 1];
+        return last && (last.width || last.height) ? last : null;
+    } catch {
+        return null;
+    }
+}
+
+// WHY: a range that is collapsed on an element, or whose captions were already replaced,
+// measures as an all-zero rect, which would pin the popup to the top-left corner. This
+// happens for caption overlays drawn in a shadow root: caretRangeFromPoint cannot enter
+// it and returns a position on the player element. Prefer the live selection, which
+// getSelectedRange resolves inside open shadow roots, and fall back to the mouse point.
+function getAnchorRect(point) {
+    const rect = rectFromRange(getSelectedRange()) || (point && rectFromRange(rangeFromPoint(point)));
+    if (rect) return rect;
+    if (!point) return null;
+    return { left: point.x, right: point.x, top: point.y, bottom: point.y, width: 0, height: 0 };
 }
 
 class TextSourceRange {

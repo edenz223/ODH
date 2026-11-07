@@ -1,5 +1,3 @@
-/* global rangeFromPoint */
-
 class Popup {
     constructor() {
         this.popup = null;
@@ -16,10 +14,10 @@ class Popup {
         this.setContent(content);
     }
 
-    showNextTo(point, content) {
+    showNextTo(anchorRect, content) {
 
         this.inject();
-        const elementRect = this.getRangeRect(point);
+        const elementRect = anchorRect || { left: 0, top: 0, bottom: 0 };
         const popupRect = this.popup.getBoundingClientRect();
 
         var posX = elementRect.left;
@@ -60,10 +58,6 @@ class Popup {
 
         const doc = this.popup;
         doc.srcdoc = content;
-    }
-
-    getRangeRect(point) {
-        return rangeFromPoint(point).getBoundingClientRect();
     }
 
     sendMessage(action, params) {
