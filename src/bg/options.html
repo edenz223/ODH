@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="css/tabmenu.css">
     <link rel="stylesheet" href="css/checkbox.css">
     <link rel="stylesheet" href="css/scriptlist.css">
@@ -12,7 +13,11 @@
 </head>
 
 <body>
-    <div class='container'>
+    <div class="container">
+        <header class="page-header">
+            <img src="../img/icon48.png" width="40" height="40" alt="">
+            <h1 data-i18n="optTitle">Online Dictionary Helper</h1>
+        </header>
 
         <div class="tabmenus">
             <a href="#" data-contentid="tab-1" class="tabmenu active" data-i18n="tabExtensionTitle">General</a>
@@ -21,7 +26,7 @@
             <a href="#" data-contentid="tab-4" class="tabmenu" data-i18n="tabAiTitle">AI Options</a>
         </div>
 
-        <form>
+        <form id="options-form">
             <div id="tab-1" class="tabcontent">
 
                 <div class="grouppanel">
@@ -30,19 +35,19 @@
                         <span class="option-helps"> <a href="https://github.com/ninja33/ODH/blob/master/README.md" target="_blank">?</a> </span>
                     </div>
                     <div class="leftpanel">
-                        <label data-i18n="lblEnabled">Enable/Disable</label>
+                        <label for="enabled" data-i18n="lblEnabled">Enable/Disable</label>
                         <div class="enabled">
                             <input type="checkbox" value=true id="enabled">
                             <label for="enabled"></label>
                         </div>                        
-                        <label data-i18n="lblMouseselection">Enable/Disable</label>
+                        <label for="mouseselection" data-i18n="lblMouseselection">Enable/Disable</label>
                         <div class="enabled">
                             <input type="checkbox" value=true id="mouseselection">
                             <label for="mouseselection"></label>
                         </div>
                     </div>
                     <div class="rightpanel">
-                        <label data-i18n="lblHotkey">AuoSel. HotKey</label>
+                        <label for="hotkey" data-i18n="lblHotkey">AuoSel. HotKey</label>
                         <select id="hotkey">
                             <option value="0">Off</option>
                             <option value="16">Shift</option>
@@ -65,25 +70,25 @@
                     </div>
                     <hr>
                     <div class="leftpanel">
-                        <label data-i18n="lblLingualType">Mono/Bilingual Dict.</label>
+                        <label for="monolingual" data-i18n="lblLingualType">Mono/Bilingual Dict.</label>
                         <select id="monolingual">
                             <option value="0" data-i18n="selBilingual">Bilingual</option>
                             <option value="1" data-i18n="selMonolingual">Monolingual</option>
                         </select>
-                        <label data-i18n="lblAudioPref">Pref. Audio</label>
+                        <label for="anki-preferred-audio" data-i18n="lblAudioPref">Pref. Audio</label>
                         <select id="anki-preferred-audio">
                             <option value="0" data-i18n="lblAudioPref0">#0</option>
                             <option value="1" data-i18n="lblAudioPref1">#1</option>
                         </select>
                     </div>
                     <div class="rightpanel">
-                        <label data-i18n="lblMaxContext">Max. Context #</label>
+                        <label for="maxcontext" data-i18n="lblMaxContext">Max. Context #</label>
                         <select id="maxcontext">
                             <option value="1">1</option>
                             <option value="2">2</option>
                             <option value="3">3</option>
                         </select>
-                        <label data-i18n="lblMaxExample">Max. Example #</label>
+                        <label for="maxexample" data-i18n="lblMaxExample">Max. Example #</label>
                         <select id="maxexample">
                             <option value="0">0</option>
                             <option value="1">1</option>
@@ -100,7 +105,7 @@
                         <span class="option-helps"> <a href="https://github.com/FooSoft/anki-connect" target="_blank">?</a> </span>
                     </div>
                     <div class="crosspanel">
-                        <label data-i18n="lblServices">Services</label>
+                        <label for="services" data-i18n="lblServices">Services</label>
                         <select id="services" class="col-2x">
                             <option value="none">None</option>
                             <option value="ankiconnect">Ankiconnect</option>
@@ -110,17 +115,17 @@
                     <div id="service-options-ankiconnect" class="service-options">
                         <hr>
                         <div class="crosspanel">
-                            <label data-i18n="lblAnkiconnecturl">URL</label>
+                            <label for="ankiconnecturl" data-i18n="lblAnkiconnecturl">URL</label>
                             <input type="text" id="ankiconnecturl" placeholder="http://127.0.0.1:8765" class="col-2x">
-                            <label class="button" id="connect" data-i18n="lblConnect">Connect</label>
+                            <button type="button" class="button" id="connect" data-i18n="lblConnect">Connect</button>
                         </div>
                     </div>
                     <div id="service-options-ankiprofile" class="service-options">
                         <hr>
                         <div class="crosspanel">
-                            <label data-i18n="lblDeckname">Deck Name</label>
+                            <label for="deckname" data-i18n="lblDeckname">Deck Name</label>
                             <select id="deckname" class="col-3x"></select>
-                            <label data-i18n="lblTypename">Type Name</label>
+                            <label for="typename" data-i18n="lblTypename">Type Name</label>
                             <select id="typename" class="col-3x"></select>
                         </div>
                         <hr>
@@ -147,13 +152,13 @@
                         <div class="clearfix"></div>
                         <hr>
                         <div class="crosspanel">
-                            <label data-i18n="lblTags">Tags Name</label>
+                            <label for="tags" data-i18n="lblTags">Tags Name</label>
                             <input type="text" id="tags" placeholder="Tags" class="col-3x">
                         </div>
                         <div id="duplicate-option">
                             <hr>
                             <div class="crosspanel">
-                                <label data-i18n="lblAllowDuplicate">Allow Duplicate</label>
+                                <label for="duplicate" data-i18n="lblAllowDuplicate">Allow Duplicate</label>
                                 <select id="duplicate" class="col-3x">
                                     <option value="0" data-i18n="selNotAllowed">Not Allowed</option>
                                     <option value="1" data-i18n="selAllowed">Allowed</option>
@@ -170,7 +175,7 @@
                         <span class="option-helps"><a href="https://github.com/ninja33/ODH/blob/master/doc/development.md" target="_blank">?</a></span>
                     </div>
                     <div class="crosspanel">
-                        <label data-i18n="lblUdfScripts">UDF Scripts Name</label>
+                        <label for="udfscripts" data-i18n="lblUdfScripts">UDF Scripts Name</label>
                         <input type="text" id="udfscripts" placeholder="http(s)://your_host.com/your_script.js" class="col-3x">
                     </div>
                 </div>
@@ -180,7 +185,7 @@
                         <span class="option-helps"><a id="hidden" href="#">…</a></span>
                     </div>
                     <div class="crosspanel" style="display:none">
-                        <label data-i18n="lblSysScripts">SYS Scripts Name</label>
+                        <label for="sysscripts" data-i18n="lblSysScripts">SYS Scripts Name</label>
                         <input type="text" id="sysscripts" placeholder="System Scripts" class="col-3x">
                     </div>
                     <div class="crosspanel">
@@ -199,22 +204,20 @@
                 <div id="ai-configurations"></div>
             </div>
         </form>
-        <hr>
-        <div class="grouppannel">
-            <div class="leftpanel" style="border-right:initial">
-                <label class="button" id="saveload" data-i18n="btnSaveLoad">Save and Load</label>
-                <div class="gifs">
+        <footer class="page-actions">
+            <div class="load-actions">
+                <button type="button" class="button" id="saveload" data-i18n="btnSaveLoad">Load Scripts</button>
+                <div class="gifs" role="status" aria-live="polite">
                     <span class="gif" id="gif-load"><img src="/fg/img/load.gif" alt=""></span>
                     <span class="gif" id="gif-good"><img src="/fg/img/good.png" alt=""></span>
                     <span class="gif" id="gif-fail"><img src="/fg/img/fail.png" alt=""></span>
                 </div>
             </div>
-            <div class="rightpanel">
-                <label class="button" id="saveclose" data-i18n="btnSaveClose">Save and Close</label>
-                <label class="button" id="close" data-i18n="btnClose">Close</label>
+            <div class="save-actions">
+                <button type="button" class="button primary" id="saveclose" data-i18n="btnSaveClose">Save and Close</button>
+                <button type="button" class="button" id="close" data-i18n="btnClose">Close</button>
             </div>
-            <div class="clearfix"></div>
-        </div>
+        </footer>
     </div>
 
     <dialog id="ai-dialog" aria-labelledby="ai-dialog-title">

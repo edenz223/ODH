@@ -37,7 +37,8 @@
     }],
     "minimum_chrome_version": "116.0.0.0",
     "options_ui": {
-        "page": "bg/options.html"
+        "page": "bg/options.html",
+        "open_in_tab": true
     },
     "permissions": ["offscreen","storage"],
     "host_permissions": ["https://dict.youdao.com/*"],

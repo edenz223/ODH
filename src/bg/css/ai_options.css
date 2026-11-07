@@ -29,3 +29,17 @@
 .ai-model-loading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
 #ai-dialog .ai-model-loading .ai-help { flex: 1; }
 #ai-dialog #ai-model-refresh { flex-shrink: 0; padding: 6px 10px; font-size: 12px; }
+
+/* Match the full-page settings cards while keeping dialog controls independent. */
+.ai-toolbar { margin: 0 0 16px; font-size: 15px; }
+.ai-card { margin: 0 0 12px; padding: 20px 24px; background: white; border-color: var(--border); border-radius: 12px; }
+#ai-empty { padding: 32px 24px; border: 1px dashed var(--border); border-radius: 12px; text-align: center; }
+
+@media (max-width: 480px) {
+    .ai-card { flex-wrap: wrap; padding: 16px; }
+    .ai-card > div { flex-basis: 100%; }
+    #ai-dialog { padding: 20px 16px; }
+    .ai-model-row { flex-wrap: wrap; }
+    #ai-dialog .ai-model-row > select, #ai-dialog .ai-model-row > input { flex-basis: 100%; width: 100%; }
+    .ai-test-row, .ai-model-loading { flex-wrap: wrap; }
+}
