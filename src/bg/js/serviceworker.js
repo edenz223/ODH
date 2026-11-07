@@ -30,7 +30,6 @@ class ODHServiceworker {
         })();
 
         chrome.runtime.onMessage.addListener(this.onMessage.bind(this));
-        chrome.runtime.onInstalled.addListener(this.onInstalled.bind(this));
         chrome.tabs.onCreated.addListener((tab) => this.onTabReady(tab.id));
         chrome.tabs.onUpdated.addListener(this.onTabReady.bind(this));
         chrome.commands.onCommand.addListener((command) => this.onCommand(command));
@@ -47,17 +46,6 @@ class ODHServiceworker {
             await optionsSave(this.options);
         } catch {
             console.error('Unable to save shortcut settings.');
-        }
-    }
-
-    onInstalled(details) {
-        if (details.reason === 'install') {
-            chrome.tabs.create({ url: chrome.runtime.getURL('bg/guide.html') });
-            return;
-        }
-        if (details.reason === 'update') {
-            chrome.tabs.create({ url: chrome.runtime.getURL('bg/update.html') });
-            return;
         }
     }
 
