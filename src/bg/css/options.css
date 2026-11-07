@@ -157,8 +157,54 @@ input::placeholder {
 }
 
 .enabled {
+    display: inline-block;
+    position: relative;
+    width: 44px;
+    height: 24px;
+    justify-self: start;
     margin: 0;
     top: 0;
+    border-radius: 24px;
+    background: transparent;
+}
+
+.enabled::before, .enabled::after {
+    content: none;
+}
+
+.enabled label {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 1px solid #a7b4ab;
+    border-radius: inherit;
+    background: #a7b4ab;
+    cursor: pointer;
+    transition: background-color .2s, border-color .2s;
+}
+
+.enabled label::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 1px 3px rgb(31 54 39 / 18%);
+    transition: transform .2s;
+}
+
+.enabled input[type=checkbox]:checked + label {
+    left: 0;
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.enabled input[type=checkbox]:checked + label::after {
+    transform: translateX(20px);
 }
 
 .enabled input[type=checkbox] {
@@ -176,6 +222,12 @@ input::placeholder {
 .enabled:focus-within {
     outline: 2px solid var(--accent);
     outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .enabled label, .enabled label::after {
+        transition: none;
+    }
 }
 
 hr {
